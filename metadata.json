@@ -1,0 +1,6 @@
+{
+  "name": "Snake Arena — Ivo Ribeiro",
+  "description": "Jogo estilo Snake clássico com 6 níveis progressivos, obstáculos dinâmicos, controles por teclado e toque, e ranking persistente em localStorage. Criado por Ivo Ribeiro.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

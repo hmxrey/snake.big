@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Snake Arena — Jogo Clássico por Ivo Ribeiro</title>
+    <meta
+      name="description"
+      content="Jogo Snake clássico com 6 níveis progressivos, obstáculos, controles por teclado e toque, e ranking local. Criado por Ivo Ribeiro."
+    />
+    <meta property="og:title" content="Snake Arena — Jogo Clássico por Ivo Ribeiro" />
+    <meta
+      property="og:description"
+      content="Desafie seus reflexos em 6 níveis crescentes e conquiste o topo do ranking. Desenvolvido por Ivo Ribeiro."
+    />
+    <meta property="og:type" content="website" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700&family=Outfit:wght@600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <!-- Cabeçalho principal em 3 zonas -->
+      <header class="topbar">
+        <div class="brand">
+          <span class="brand-mark" aria-hidden="true"></span>
+          <span class="brand-name">Snake Arena</span>
+        </div>
+
+        <nav class="topbar-meta" aria-label="Informações do criador">
+          <span class="creator-credit">Criado por <strong>Ivo Ribeiro</strong></span>
+        </nav>
+
+        <div class="topbar-actions">
+          <button
+            id="btn-sound"
+            type="button"
+            class="btn btn-ghost"
+            aria-label="Alternar efeitos sonoros"
+            aria-pressed="true"
+          >
+            Som: Ligado
+          </button>
+          <button
+            id="btn-pause"
+            type="button"
+            class="btn btn-secondary"
+            disabled
+          >
+            Pausar
+          </button>
+        </div>
+      </header>
+
+      <!-- Área principal do jogo e painel lateral -->
+      <main class="workspace">
+        <!-- Coluna esquerda: HUD + Arena Canvas + Controles Touch -->
+        <section class="arena-column" aria-label="Área do jogo">
+          <!-- Placar e status em tempo real -->
+          <div class="hud-bar" role="status" aria-live="polite">
+            <div class="hud-item">
+              <span class="hud-label">Jogador</span>
+              <span id="hud-player" class="hud-value hud-player-name">—</span>
+            </div>
+            <div class="hud-item">
+              <span class="hud-label">Pontuação</span>
+              <span id="hud-score" class="hud-value tabular">0</span>
+            </div>
+            <div class="hud-item">
+              <span class="hud-label">Nível</span>
+              <span id="hud-level" class="hud-value tabular">1 / 6</span>
+            </div>
+            <div class="hud-item">
+              <span class="hud-label">Meta</span>
+              <span id="hud-goal" class="hud-value tabular">50 pts</span>
+            </div>
+            <div class="hud-item">
+              <span class="hud-label">Recorde</span>
+              <span id="hud-best" class="hud-value tabular accent-text">0</span>
+            </div>
+          </div>
+
+          <!-- Palco do jogo com overlays contextuais -->
+          <div id="board-stage" class="board-stage">
+            <canvas
+              id="game-canvas"
+              width="560"
+              height="560"
+              aria-label="Tabuleiro do jogo Snake"
+            ></canvas>
+
+            <!-- Barra de progresso do nível atual -->
+            <div class="level-progress-wrap" aria-hidden="true">
+              <div id="level-progress-fill" class="level-progress-fill"></div>
+            </div>
+
+            <!-- Overlay 1: Tela Inicial -->
+            <div id="overlay-start" class="overlay is-visible">
+              <div class="overlay-card">
+                <p class="overlay-kicker">6 Níveis · Obstáculos · Ranking Local</p>
+                <h1 class="overlay-title">Snake Arena</h1>
+                <p class="overlay-desc">
+                  Guie a serpente, colete as maçãs para avançar pelos 6 mapas
+                  progressivos e evite paredes e obstáculos.
+                </p>
+
+                <form id="start-form" class="start-form" novalidate>
+                  <label for="player-name-input" class="input-label">
+                    Seu nome para o ranking
+                  </label>
+                  <div class="input-row">
+                    <input
+                      id="player-name-input"
+                      type="text"
+                      maxlength="20"
+                      autocomplete="nickname"
+                      placeholder="Digite seu nome..."
+                      required
+                    />
+                    <button type="submit" class="btn btn-primary">
+                      Iniciar Jogo
+                    </button>
+                  </div>
+                  <div class="level-select-wrap">
+                    <div class="level-select-header">
+                      <label for="start-level-select" class="input-label">
+                        Nível inicial
+                      </label>
+                      <button
+                        id="btn-reset-progress"
+                        type="button"
+                        class="btn-link-danger"
+                        hidden
+                      >
+                        Resetar progresso
+                      </button>
+                    </div>
+                    <select id="start-level-select" class="level-select"></select>
+                    <p id="saved-progress-note" class="progress-note"></p>
+                  </div>
+                  <p id="name-error" class="form-error" role="alert" hidden>
+                    Por favor, informe seu nome antes de iniciar.
+                  </p>
+                </form>
+
+                <div class="overlay-footer-note">
+                  <span>Controles: Setas ou WASD · Deslize no celular</span>
+                  <span aria-hidden="true">·</span>
+                  <span>Autor: <strong>Ivo Ribeiro</strong></span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Overlay 2: Transição de Nível -->
+            <div id="overlay-level" class="overlay" hidden>
+              <div class="overlay-card">
+                <p id="level-up-kicker" class="overlay-kicker">Nível Desbloqueado</p>
+                <h2 id="level-up-title" class="overlay-title">Nível 2</h2>
+                <p id="level-up-desc" class="overlay-desc">
+                  Novos obstáculos foram posicionados na arena e a velocidade aumentou.
+                </p>
+                <div class="overlay-actions">
+                  <button id="btn-next-level" type="button" class="btn btn-primary">
+                    Continuar (Espaço)
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Overlay 3: Pausa -->
+            <div id="overlay-pause" class="overlay" hidden>
+              <div class="overlay-card">
+                <p class="overlay-kicker">Partida em Pausa</p>
+                <h2 class="overlay-title">Jogo Pausado</h2>
+                <p class="overlay-desc">
+                  Respire fundo. Pressione Espaço ou clique abaixo para retomar.
+                </p>
+                <div class="overlay-actions">
+                  <button id="btn-resume" type="button" class="btn btn-primary">
+                    Retomar
+                  </button>
+                  <button id="btn-restart-paused" type="button" class="btn btn-secondary">
+                    Reiniciar
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Overlay 4: Fim de Jogo -->
+            <div id="overlay-gameover" class="overlay" hidden>
+              <div class="overlay-card">
+                <p id="gameover-kicker" class="overlay-kicker">Fim de Partida</p>
+                <h2 class="overlay-title">Você Colidiu</h2>
+
+                <div class="summary-grid">
+                  <div class="summary-cell">
+                    <span class="summary-label">Jogador</span>
+                    <span id="final-player" class="summary-value">—</span>
+                  </div>
+                  <div class="summary-cell">
+                    <span class="summary-label">Pontuação</span>
+                    <span id="final-score" class="summary-value tabular accent-text">0</span>
+                  </div>
+                  <div class="summary-cell">
+                    <span class="summary-label">Nível Alcançado</span>
+                    <span id="final-level" class="summary-value tabular">1</span>
+                  </div>
+                </div>
+
+                <p id="gameover-feedback" class="overlay-desc"></p>
+
+                <div class="overlay-actions">
+                  <button id="btn-play-again" type="button" class="btn btn-primary">
+                    Jogar Novamente
+                  </button>
+                  <button id="btn-change-player" type="button" class="btn btn-secondary">
+                    Escolher Nível / Nome
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Controles direcionais táteis (mobile e clique opcional) -->
+          <div class="touch-controls" aria-label="Controles direcionais">
+            <div class="dpad">
+              <button
+                type="button"
+                class="dpad-btn dpad-up"
+                data-dir="UP"
+                aria-label="Mover para cima"
+              >
+                ▲
+              </button>
+              <button
+                type="button"
+                class="dpad-btn dpad-left"
+                data-dir="LEFT"
+                aria-label="Mover para a esquerda"
+              >
+                ◀
+              </button>
+              <button
+                type="button"
+                class="dpad-btn dpad-down"
+                data-dir="DOWN"
+                aria-label="Mover para baixo"
+              >
+                ▼
+              </button>
+              <button
+                type="button"
+                class="dpad-btn dpad-right"
+                data-dir="RIGHT"
+                aria-label="Mover para a direita"
+              >
+                ▶
+              </button>
+            </div>
+            <p class="touch-hint">
+              Toque nas setas ou deslize o dedo sobre o tabuleiro
+            </p>
+          </div>
+        </section>
+
+        <!-- Coluna direita: Níveis + Ranking + Atalhos -->
+        <aside class="sidebar" aria-label="Níveis e Ranking">
+          <!-- Painel de Níveis -->
+          <section class="panel">
+            <div class="panel-header">
+              <h2 class="panel-title">Progressão de Níveis</h2>
+              <span id="sidebar-level-name" class="panel-meta">Nível 1</span>
+            </div>
+            <ul id="levels-list" class="levels-list"></ul>
+          </section>
+
+          <!-- Painel de Ranking -->
+          <section class="panel ranking-panel">
+            <div class="panel-header">
+              <h2 class="panel-title">Ranking (Top 10)</h2>
+              <button
+                id="btn-clear-ranking"
+                type="button"
+                class="btn-link-danger"
+              >
+                Limpar
+              </button>
+            </div>
+
+            <div class="ranking-table-wrap">
+              <table class="ranking-table">
+                <thead>
+                  <tr>
+                    <th scope="col">#</th>
+                    <th scope="col">Jogador</th>
+                    <th scope="col" class="num">Nível</th>
+                    <th scope="col" class="num">Pontos</th>
+                  </tr>
+                </thead>
+                <tbody id="ranking-body"></tbody>
+              </table>
+              <p id="ranking-empty" class="ranking-empty" hidden>
+                Nenhuma pontuação registrada ainda. Seja o primeiro a entrar no placar!
+              </p>
+            </div>
+          </section>
+
+          <!-- Guia rápido de mecânicas -->
+          <section class="panel rules-panel">
+            <h2 class="panel-title">Regras &amp; Atalhos</h2>
+            <ul class="rules-list">
+              <li><strong>Maçã vermelha:</strong> +10 pontos e cresce a serpente.</li>
+              <li><strong>Maçã dourada (bônus):</strong> +30 pontos por tempo limitado a partir do Nível 2.</li>
+              <li><strong>Teclado:</strong> Setas ou W A S D · Espaço/P para pausar · M para som.</li>
+            </ul>
+          </section>
+        </aside>
+      </main>
+
+      <!-- Rodapé institucional com crédito visível -->
+      <footer class="footer">
+        <span>Snake Arena · Desenvolvido por <strong>Ivo Ribeiro</strong></span>
+        <span class="footer-sep" aria-hidden="true">·</span>
+        <span>HTML5 Canvas, CSS3 e JavaScript Puro</span>
+      </footer>
+    </div>
+
+    <script defer src="script.js"></script>
+  </body>
+</html>
